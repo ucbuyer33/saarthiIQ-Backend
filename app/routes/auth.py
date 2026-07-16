@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import UserRegister, UserLogin
 from app.core.security import (
-    hash_password,
+    get_password_hash,
     verify_password,
     create_access_token,
 )
@@ -40,7 +40,7 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
     new_user = User(
         full_name=user.full_name,
         email=user.email,
-        hashed_password=hash_password(user.password),
+        hashed_password=get_password_hash(user.password),
         role=requested_role,
     )
 

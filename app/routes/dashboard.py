@@ -26,7 +26,7 @@ async def get_user_dashboard(
     """
     try:
         # 2. Scope Injection: Pass current_user to isolate metrics based on user.role
-        dashboard_stats = get_dashboard_data(db=db, user=current_user)
+        dashboard_stats = get_dashboard_data(db, current_user)
         
         if dashboard_stats is None:
             return {

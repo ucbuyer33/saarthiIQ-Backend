@@ -50,4 +50,4 @@ class Candidate(Base):
     # 3. Future Extensions (Jo tune models list mein banaye the)
     resumes = relationship("Resume", back_populates="candidate", cascade="all, delete-orphan")
     interviews = relationship("Interview", back_populates="candidate", cascade="all, delete-orphan")
-    notes = relationship("Notes", back_populates="candidate", cascade="all, delete-orphan")
+    notes = relationship("Note", back_populates="candidate", cascade="all, delete-orphan")

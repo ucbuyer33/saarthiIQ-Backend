@@ -27,7 +27,7 @@ from app.routes.skill_gap import router as skill_gap_router
 from app.routes.ai_report import router as ai_report_router
 from app.routes.dashboard import router as dashboard_router
 from app.routes.search import router as search_router
-from app.routes.notes import router as notes_router
+from app.routes.note import router as notes_router
 from app.routes.interviews import router as interview_router
 from app.routes.campaigns import router as campaigns_router
 from app.routes.tasks import router as tasks_router

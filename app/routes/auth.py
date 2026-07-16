@@ -22,7 +22,7 @@ router = APIRouter(
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(user: UserRegister, db: Session = Depends(get_db)):
-    """Registers a new user inside the system securely."""
+    """Registers a new user inside the system securely with role awareness."""
     existing_user = db.query(User).filter(User.email == user.email).first()
 
     if existing_user:
@@ -31,11 +31,17 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
             detail="Email already registered"
         )
 
-    # 1. Column Match: 'password' ki jagah 'hashed_password' use kiya
+    # Allow only safe public roles from registration: "user" (Recrutee) and "recruiter".
+    allowed_public_roles = {"user", "recruiter"}
+    requested_role = user.role or "user"
+    if requested_role not in allowed_public_roles:
+        requested_role = "user"  # fallback to Recrutee
+
     new_user = User(
         full_name=user.full_name,
         email=user.email,
-        hashed_password=hash_password(user.password)
+        hashed_password=hash_password(user.password),
+        role=requested_role,
     )
 
     db.add(new_user)
@@ -46,7 +52,8 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
         "status": "success",
         "message": "User Registered Successfully",
         "user_id": new_user.id,
-        "email": new_user.email
+        "email": new_user.email,
+        "role": new_user.role,
     }
 
 

@@ -1,7 +1,7 @@
 # saarthiIQ-Backend\create_admin.py
 from app.database import SessionLocal
 from app.models.user import User
-from app.core.security import hash_password
+from app.core.security import get_password_hash
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
         new_admin = User(
             full_name="Default Admin",
             email=admin_email,
-            hashed_password=hash_password(admin_password),
+            hashed_password=get_password_hash(admin_password),
             role="admin",
             is_active=True,
         )

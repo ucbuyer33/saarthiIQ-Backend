@@ -1,3 +1,4 @@
+# saarthiIQ-Backend\app\models\user.py
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -31,3 +32,10 @@ class User(Base):
     interviews = relationship("Interview", back_populates="interviewer")
     notes = relationship("Note", back_populates="user", cascade="all, delete-orphan")
     audit_logs = relationship("Audit", back_populates="user")
+    phone = Column(String, nullable=True)
+    location = Column(String, nullable=True)
+    timezone = Column(String, nullable=True)
+    language = Column(String, nullable=True)
+    theme = Column(String, nullable=True)
+    notification_settings = Column(String, nullable=True)
+    email_preferences = Column(String, nullable=True)

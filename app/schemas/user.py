@@ -1,30 +1,58 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
+from pydantic import BaseModel, EmailStr, Field
+
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    timezone: Optional[str] = None
+    language: Optional[str] = None
+    theme: Optional[str] = None
+    notification_settings: Optional[str] = None
+    email_preferences: Optional[str] = None
+
+
 class UserBase(BaseModel):
-    full_name: str = Field(..., min_length=2, max_length=100, description="Full name of the system user or employee")
-    email: EmailStr = Field(..., description="Official enterprise authenticated email identity")
+    full_name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr = Field(...)
 
-# ==========================================
-# 📥 User Create Schema (Synchronized with Registration Constraints)
-# ==========================================
+
 class UserCreate(UserBase):
-    # 1. Strict Plain-Text Password Length Constraints to prevent weak hashes
-    password: str = Field(..., min_length=8, max_length=64, description="Raw plain text password string (Min 8 characters required)")
-    
-    # 2. Advanced Multi-Role Injection Capability
-    role: Optional[str] = Field("user", description="System tier authorization level: admin, recruiter, interviewer, user")
-    is_active: Optional[bool] = Field(True, description="Allows initializing user activation state explicitly")
+    password: str = Field(..., min_length=8, max_length=64)
+    role: Optional[str] = Field("user")
+    is_active: Optional[bool] = Field(True)
 
-# ==========================================
-# 📤 User Response Schema (Matches routes/users.py exactly)
-# ==========================================
+
 class UserResponse(UserBase):
     id: int
-    role: str = Field(..., description="Assigned authorization context status")
-    is_active: bool = Field(..., description="Determines if user is banned or active in operational pipelines")
+    role: str
+    is_active: bool
     created_at: datetime
+
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    timezone: Optional[str] = None
+    language: Optional[str] = None
+    theme: Optional[str] = None
+    notification_settings: Optional[str] = None
+    email_preferences: Optional[str] = None
+
+    candidates_created: Optional[int] = None
+    interviews_scheduled: Optional[int] = None
+    campaigns_created: Optional[int] = None
+    tasks_completed: Optional[int] = None
+    last_activity: Optional[datetime] = None
+
+    active_candidates: Optional[int] = None
+    resumes_processed: Optional[int] = None
+    campaigns_owned: Optional[int] = None
+    permission_scope: Optional[str] = None
+    admin_privileges: Optional[str] = None
+    users_managed: Optional[int] = None
 
     class Config:
         from_attributes = True

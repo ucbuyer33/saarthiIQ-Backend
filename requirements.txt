@@ -37,3 +37,4 @@ aiosmtplib>=3.0.0             # Non-blocking async SMTP layer for email campaign
 python-dotenv>=1.0.0
 
 aiofiles>=23.0.0              # Async local file structure storage streams handle karne ke liye
+pymupdf>=1.24.0

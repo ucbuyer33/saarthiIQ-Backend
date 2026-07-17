@@ -87,7 +87,7 @@ async def login(
         )
 
     # 4. Correct Token Call: Explicit 'subject' syntax jo security.py me banaya tha
-    token = create_access_token(subject=db_user.email)
+    token = create_access_token(subject=db_user.email, role=db_user.role)
 
     return {
         "access_token": token,

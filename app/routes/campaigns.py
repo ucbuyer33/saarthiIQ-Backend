@@ -10,6 +10,7 @@ from app.schemas.campaign import CampaignCreate, CampaignUpdate
 from app.core.dependencies import get_current_user
 from app.services.email_service import send_email
 from app.models.candidate import Candidate
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,8 @@ router = APIRouter(
 # 🚀 Background Task Function
 # ==========================================
 def process_campaign_emails_bg(campaign_id: int):
-    """Runs in the background so the UI doesn't freeze."""
-    db = SessionLocal() # New session for background task
+    db = SessionLocal()
+    campaign = None
     try:
         campaign = db.query(Campaign).filter(Campaign.id == campaign_id).first()
         candidates = db.query(Candidate).filter(Candidate.email.isnot(None)).all()
@@ -34,19 +35,18 @@ def process_campaign_emails_bg(campaign_id: int):
 
         sent = 0
         for candidate in candidates:
-            success = send_email(
+            success = asyncio.run(send_email(
                 to_email=candidate.email,
                 subject=campaign.subject,
-                message=campaign.message
-            )
+                body=campaign.message
+            ))
             if success:
                 sent += 1
-                
-        # Update final stats
+
         campaign.sent_count = sent
         campaign.status = "Completed"
         db.commit()
-        
+
     except Exception as e:
         logger.error(f"Campaign {campaign_id} failed: {str(e)}")
         if campaign:

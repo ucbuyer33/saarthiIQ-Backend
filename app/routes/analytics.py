@@ -20,22 +20,24 @@ async def get_dashboard_analytics(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Fetches aggregated dashboard statistics tailored to the user's access level.
-    """
     try:
-        # 2. Security Context Check & Multi-tenancy Isolation:
-        # User object pass kiya taaki service layer filter kar sake ki admin hai ya normal user[cite: 1].
-        stats = get_dashboard_stats(db=db, user=current_user)
-        
+        stats = get_dashboard_stats(db=db, current_user=current_user)
+
         if stats is None:
             return {
                 "total_candidates": 0,
-                "active_campaigns": 0,
-                "upcoming_interviews": 0,
-                "message": "No data available at the moment."
+                "total_users": 0,
+                "total_interviews": 0,
+                "total_tasks": 0,
+                "total_campaigns": 0,
+                "candidate_status_breakdown": {
+                    "Applied": 0,
+                    "Interviewing": 0,
+                    "Shortlisted": 0,
+                    "Rejected": 0
+                }
             }
-            
+
         return stats
 
     except Exception as e:

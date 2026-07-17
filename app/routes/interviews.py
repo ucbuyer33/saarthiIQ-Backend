@@ -17,6 +17,40 @@ router = APIRouter(
     tags=["Interview Management"]
 )
 
+# ==========================================
+# 📋 Get All Interviews
+# ==========================================
+@router.get("", status_code=status.HTTP_200_OK)
+async def get_all_interviews(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Fetch all interviews visible to the current user."""
+    query = db.query(Interview)
+
+    if current_user.role != "admin":
+        query = query.join(Candidate, Interview.candidate_id == Candidate.id).filter(
+            Candidate.created_by == current_user.id
+        )
+
+    interviews = query.order_by(Interview.interview_date.desc()).all()
+
+    results = []
+    for interview in interviews:
+        results.append({
+            "id": interview.id,
+            "candidate_id": interview.candidate_id,
+            "candidate_name": interview.candidate.full_name if interview.candidate else f"Candidate #{interview.candidate_id}",
+            "interviewer_name": interview.interviewer_name,
+            "interview_type": interview.interview_type,
+            "interview_date": interview.interview_date,
+            "meeting_link": interview.meeting_link,
+            "status": interview.status,
+            "feedback": interview.feedback,
+        })
+
+    return results
+
 
 # ==========================================
 # 📅 Schedule Interview
@@ -126,3 +160,29 @@ async def update_interview(
     db.commit()
     db.refresh(interview)
     return interview
+
+@router.delete("/{interview_id}", status_code=status.HTTP_200_OK)
+async def delete_interview(
+    interview_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete a scheduled interview. Admin only."""
+    interview = db.query(Interview).filter(Interview.id == interview_id).first()
+
+    if not interview:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Interview not found"
+        )
+
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admin can delete interviews."
+        )
+
+    db.delete(interview)
+    db.commit()
+
+    return {"message": "Interview deleted successfully"}

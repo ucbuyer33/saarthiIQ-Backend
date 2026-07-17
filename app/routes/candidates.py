@@ -9,7 +9,8 @@ from app.models.user import User
 from app.schemas.candidate import (
     CandidateCreate,
     CandidateUpdate,
-    CandidateResponse
+    CandidateResponse,
+    CandidateListResponse,
 )
 from app.core.dependencies import get_current_user
 
@@ -39,8 +40,9 @@ async def create_candidate(
         )
 
     # 2. Schema Safe Mapping: Auto dumps Pydantic dict into SQLAlchemy model
+    # Upgraded from .dict() to Pydantic v2 .model_dump()
     new_candidate = Candidate(
-        **candidate.dict(),  # Perfectly maps with the updated JSON format skills!
+        **candidate.model_dump(),  # Perfectly maps with the updated JSON format skills!
         created_by=current_user.id
     )
 
@@ -53,7 +55,7 @@ async def create_candidate(
 # ==========================
 # 📊 Get All Candidates (Paginated & Filtered)
 # ==========================
-@router.get("/", response_model=dict)
+@router.get("/", response_model=CandidateListResponse)
 async def get_all_candidates(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
@@ -123,7 +125,8 @@ async def update_candidate(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to modify this profile")
 
     # 3. Dynamic Field Mapping (Saves partial data cleanly without erasing defaults)
-    update_data = updated_candidate.dict(exclude_unset=True)
+    # Upgraded from .dict() to Pydantic v2 .model_dump()
+    update_data = updated_candidate.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(candidate, key, value)
 
@@ -135,7 +138,7 @@ async def update_candidate(
 # ==========================
 # 🗑️ Delete Candidate
 # ==========================
-@router.delete("/{candidate_id}")
+@router.delete("/{candidate_id}", status_code=status.HTTP_200_OK)
 async def delete_candidate(
     candidate_id: int,
     db: Session = Depends(get_db),

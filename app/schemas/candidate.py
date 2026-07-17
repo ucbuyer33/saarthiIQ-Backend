@@ -1,15 +1,20 @@
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List
 from enum import Enum
 
-# 1. Candidate Pipeline Status States
+# ==========================================
+# ⚙️ Candidate Pipeline Status States
+# ==========================================
 class CandidateStatus(str, Enum):
     APPLIED = "Applied"
     INTERVIEWING = "Interviewing"
     SHORTLISTED = "Shortlisted"
     REJECTED = "Rejected"
 
+# ==========================================
+# 📋 Base Candidate Schema
+# ==========================================
 class CandidateBase(BaseModel):
     full_name: str = Field(..., min_length=2, max_length=100, description="Full name of the candidate")
     email: EmailStr = Field(..., description="Unique email address of the candidate")
@@ -34,14 +39,14 @@ class CandidateCreate(CandidateBase):
 # ==========================================
 class CandidateUpdate(BaseModel):
     # Made completely optional to facilitate smooth partial updates via model_dump(exclude_unset=True)
-    full_name: Optional[str] = Field(None, min_length=2, max_length=100)
-    email: Optional[EmailStr] = None
-    phone: Optional[str] = None
-    skills: Optional[List[str]] = None
-    experience: Optional[str] = None
-    location: Optional[str] = None
-    resume_url: Optional[str] = None
-    status: Optional[CandidateStatus] = None
+    full_name: Optional[str] = Field(None, min_length=2, max_length=100, description="Updated full name")
+    email: Optional[EmailStr] = Field(None, description="Updated email address")
+    phone: Optional[str] = Field(None, description="Updated phone number")
+    skills: Optional[List[str]] = Field(None, description="Updated list of technical skills")
+    experience: Optional[str] = Field(None, description="Updated experience summary")
+    location: Optional[str] = Field(None, description="Updated residential city")
+    resume_url: Optional[str] = Field(None, description="Updated pathway link to resume")
+    status: Optional[CandidateStatus] = Field(None, description="Updated pipeline status stage")
 
 # ==========================================
 # 📤 Response Candidate Schema
@@ -52,5 +57,11 @@ class CandidateResponse(CandidateBase):
     created_by: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    # Modern Pydantic v2 configuration format
+    model_config = ConfigDict(from_attributes=True)
+
+class CandidateListResponse(BaseModel):
+    total: int
+    page: int
+    limit: int
+    results: List[CandidateResponse]

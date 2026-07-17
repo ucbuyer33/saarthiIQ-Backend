@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.note import Note
 from app.models.candidate import Candidate
 from app.models.user import User
-from app.schemas.note import NoteCreate, NoteUpdate # Assume NoteUpdate banaoge schemas me
+from app.schemas.note import NoteCreate, NoteUpdate, NoteResponse
 from app.core.dependencies import get_current_user
 
 logger = logging.getLogger(__name__)
@@ -19,9 +19,43 @@ router = APIRouter(
 
 
 # ==========================================
+# 🔍 Get Notes by Candidate
+# ==========================================
+@router.get("/{candidate_id}", response_model=List[NoteResponse])
+async def get_notes_by_candidate(
+    candidate_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Fetches all notes for a specific candidate profile with ownership validation."""
+    candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
+
+    if not candidate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidate not found"
+        )
+
+    # Security Context: Owner validation guard (Admins bypass)
+    if candidate.created_by != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view notes for this candidate."
+        )
+
+    notes = (
+        db.query(Note)
+        .filter(Note.candidate_id == candidate_id)
+        .order_by(Note.created_at.desc())
+        .all()
+    )
+    return notes
+
+
+# ==========================================
 # 📝 Add Note to Candidate
 # ==========================================
-@router.post("/{candidate_id}", status_code=status.HTTP_201_CREATED)
+@router.post("/{candidate_id}", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
 async def add_note(
     candidate_id: int,
     data: NoteCreate,
@@ -59,7 +93,7 @@ async def add_note(
 # ==========================================
 # 🛠️ Update Note / Remarks
 # ==========================================
-@router.put("/{note_id}")
+@router.put("/{note_id}", response_model=NoteResponse)
 async def update_note(
     note_id: int,
     data: NoteUpdate,
@@ -108,7 +142,7 @@ async def delete_note(
             detail="Note reference not found"
         )
 
-    # Authorization Check
+    # Authorization Check: Only the creator of the note or an admin can delete it
     if note_entry.created_by != current_user.id and current_user.role != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

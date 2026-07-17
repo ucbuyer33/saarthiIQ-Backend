@@ -122,6 +122,37 @@ async def download_candidate_resume(
         media_type="application/pdf"
     )
 
+# ==========================================
+# 📄 Get Resumes By Candidate
+# ==========================================
+@router.get("/{candidate_id}", response_model=List[ResumeResponse])
+async def get_resumes_by_candidate(
+    candidate_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    candidate = db.query(Candidate).filter(Candidate.id == candidate_id).first()
+
+    if not candidate:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Candidate not found"
+        )
+
+    if candidate.created_by != current_user.id and current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view resumes for this candidate."
+        )
+
+    resumes = (
+        db.query(Resume)
+        .filter(Resume.candidate_id == candidate_id)
+        .order_by(Resume.id.desc())
+        .all()
+    )
+
+    return resumes
 
 # ==========================================
 # 🗑️ Delete Resume (Transaction Safe)

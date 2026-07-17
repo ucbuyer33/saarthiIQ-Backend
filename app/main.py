@@ -8,13 +8,13 @@ from app.config import settings
 from app.database import Base, engine
 
 # Models Sync
-from app.models.user import User
+from app.models.note import Note
+from app.models.campaign import Campaign
+from app.models.interview import Interview
 from app.models.candidate import Candidate
 from app.models.resume import Resume
-from app.models.note import Note
-from app.models.interview import Interview
-from app.models.campaign import Campaign
 from app.models.audit import Audit
+from app.models.user import User
 
 # API Routers Core Injections
 from app.routes.auth import router as auth_router

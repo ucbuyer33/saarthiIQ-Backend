@@ -1,11 +1,4 @@
 # saarthiIQ-Backend\app\main.py
-# Add this temporarily
-try:
-    from create_admin import main as create_admin_user
-    create_admin_user()
-    print("--- ADMIN CREATION SCRIPT EXECUTED ---")
-except Exception as e:
-    print(f"--- ADMIN CREATION FAILED: {e} ---")
 from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager

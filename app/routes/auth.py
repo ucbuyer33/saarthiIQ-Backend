@@ -8,7 +8,7 @@ from app.models.user import User
 from app.models.session import UserSession
 from app.schemas.auth import UserRegister
 from app.schemas.user import UserResponse, UserUpdate
-from app.schemas.session import SessionResponse
+from app.schemas.session import SessionResponse, SessionListResponse
 from app.core.security import (
     get_password_hash,
     verify_password,
@@ -109,7 +109,7 @@ async def login(
     }
 
 
-@router.get("/sessions", response_model=dict, status_code=status.HTTP_200_OK)
+@router.get("/sessions", response_model=list[SessionResponse], status_code=status.HTTP_200_OK)
 async def get_sessions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),

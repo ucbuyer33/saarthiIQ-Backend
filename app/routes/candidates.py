@@ -1,6 +1,8 @@
+# saarthiIQ-Backend\app\routes\candidates.py
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from app.services.audit_service import log_action
 import logging
 
 from app.database import get_db
@@ -47,6 +49,8 @@ async def create_candidate(
     )
 
     db.add(new_candidate)
+    db.commit()
+    log_action(db, "CREATE", "candidate", user_id=current_user.id, details={"candidate_id": new_candidate.id, "email": new_candidate.email})
     db.commit()
     db.refresh(new_candidate)
     return new_candidate
@@ -129,7 +133,7 @@ async def update_candidate(
     update_data = updated_candidate.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(candidate, key, value)
-
+    log_action(db, "UPDATE", "candidate", user_id=current_user.id, details={"candidate_id": candidate.id, "fields": list(update_data.keys())})
     db.commit()
     db.refresh(candidate)
     return candidate
@@ -153,6 +157,7 @@ async def delete_candidate(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this profile")
 
     db.delete(candidate)
+    log_action(db, "DELETE", "candidate", user_id=current_user.id, details={"candidate_id": candidate.id})
     db.commit()
 
     return {"message": "Candidate and all associated data deleted successfully"}

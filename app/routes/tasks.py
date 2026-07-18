@@ -1,6 +1,8 @@
+# saarthiIQ-Backend\app\routes\tasks.py
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import Optional, List
+from app.services.audit_service import log_action
 import logging
 
 from app.database import get_db
@@ -35,6 +37,7 @@ async def create_task(
     )
 
     db.add(new_task)
+    log_action(db, "CREATE", "task", user_id=current_user.id, details={"task_id": new_task.id})
     db.commit()
     db.refresh(new_task)
     return new_task
@@ -125,6 +128,7 @@ async def update_task_details(
     for key, value in update_data.items():
         setattr(task, key, value)
 
+    log_action(db, "UPDATE", "task", user_id=current_user.id, details={"task_id": task.id, "fields": list(update_data.keys())})
     db.commit()
     db.refresh(task)
     return task
@@ -152,5 +156,6 @@ async def delete_task_record(
         )
 
     db.delete(task)
+    log_action(db, "DELETE", "task", user_id=current_user.id, details={"task_id": task.id})
     db.commit()
     return {"message": "Task deleted successfully"}

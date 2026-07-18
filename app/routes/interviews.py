@@ -1,6 +1,8 @@
+# saarthiIQ-Backend\app\routes\interviews.py
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+from app.services.audit_service import log_action
 import logging
 
 from app.database import get_db
@@ -93,9 +95,16 @@ async def schedule_interview(
     
     # Trigger Candidate status update automatically
     candidate.status = "Interviewing"
-    
+    log_action(
+    db,
+    "CREATE",
+    "interview",
+    user_id=current_user.id,
+    details={"interview_id": new_interview.id, "candidate_id": candidate_id, "status": "Scheduled"},
+)
     db.commit()
     db.refresh(new_interview)
+    
     return new_interview
 
 
@@ -156,7 +165,13 @@ async def update_interview(
     elif data.status == "Completed" and interview.candidate.status == "Interviewing":
         # System status reflects evaluation mode
         interview.candidate.status = "Shortlisted" 
-
+    log_action(
+        db,
+        "UPDATE",
+        "interview",
+        user_id=current_user.id,
+        details={"interview_id": interview.id, "fields": list(update_dict.keys())},
+)
     db.commit()
     db.refresh(interview)
     return interview
@@ -183,6 +198,7 @@ async def delete_interview(
         )
 
     db.delete(interview)
+    log_action(db, "DELETE", "interview", user_id=current_user.id, details={"interview_id": interview.id})
     db.commit()
 
     return {"message": "Interview deleted successfully"}

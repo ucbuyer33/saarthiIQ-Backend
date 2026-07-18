@@ -1,6 +1,7 @@
 # saarthiIQ-Backend\app\routes\users.py
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
+from app.services.audit_service import log_action
 
 from app.core.dependencies import get_current_user
 from app.database import get_db
@@ -40,6 +41,15 @@ async def update_current_logged_in_user(
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
+
+    log_action(
+        db,
+        action="UPDATE",
+        module="profile",
+        user_id=current_user.id,
+        details={"fields": list(data.keys())},
+    )
+
     return current_user
 
 

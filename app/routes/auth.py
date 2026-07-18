@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
+from app.services.audit_service import log_action
 import logging
 
 from app.database import get_db
@@ -39,6 +40,7 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
     )
 
     db.add(new_user)
+    log_action(db, "REGISTER", "auth", user_id=new_user.id, details={"email": new_user.email, "role": new_user.role})
     db.commit()
     db.refresh(new_user)
 
@@ -73,6 +75,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         )
 
     token = create_access_token(subject=db_user.email, role=db_user.role)
+    log_action(db, "LOGIN", "auth", user_id=db_user.id, details={"email": db_user.email})
+    db.commit()
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -90,18 +94,21 @@ async def change_password(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
     current_user.hashed_password = get_password_hash(new_password)
     db.add(current_user)
+    log_action(db, "PASSWORD_CHANGE", "auth", user_id=current_user.id)
     db.commit()
     return {"status": "success", "message": "Password updated"}
 
 
 @router.post("/logout-everywhere", status_code=status.HTTP_200_OK)
 async def logout_everywhere(current_user: User = Depends(get_current_user)):
+    log_action(db, "LOGOUT_EVERYWHERE", "auth", user_id=current_user.id)
     return {"status": "success", "message": "Logged out everywhere"}
 
 
 @router.delete("/me", status_code=status.HTTP_200_OK)
 async def delete_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     db.delete(current_user)
+    log_action(db, "DELETE", "auth", user_id=current_user.id)
     db.commit()
     return {"status": "success", "message": "Account deleted"}
 

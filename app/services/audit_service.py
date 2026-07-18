@@ -11,32 +11,22 @@ def log_action(
     action: str,
     module: str,
     user_id: Optional[int] = None,
-    details: Optional[Dict[str, Any]] = None
-) -> Audit:
-    """
-    Spawns an audit log entry inside the staging transaction pipeline.
-    Avoids aggressive committing to ensure parent DB transactions maintain atomicity.
-    """
+    details: Optional[Dict[str, Any]] = None,
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+) -> Optional[Audit]:
     try:
-        # 1. Advanced Structural Metadata Extraction
         log = Audit(
             action=action,
             module=module,
             user_id=user_id,
-            details=details  # Captures JSON state transitions dynamically
+            details=details,
+            ip_address=ip_address,
+            user_agent=user_agent,
         )
-
         db.add(log)
-        
-        # 2. Production Commit Rule (db.flush instead of db.commit):
-        # We flush it to populate the ID and timestamp properties in memory 
-        # but let the main API route handle the final atomic .commit(). 
-        # If the main action crashes, the audit trail rolls back safely!
         db.flush()
         return log
-
     except Exception as e:
-        # Compliance fail-safe log buffer (Don't let logging failures crash main pipeline flows)
-        logger.error(f"Failed to stage system audit log entity tracking matrix: {str(e)}")
-        # We swallow or pass depending on strict compliance protocols. In production, we pass.
+        logger.error(f"Failed to stage audit log: {str(e)}")
         return None

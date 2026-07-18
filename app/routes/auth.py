@@ -9,7 +9,7 @@ from app.models.user import User
 from app.models.session import UserSession
 from app.schemas.auth import UserRegister
 from app.schemas.user import UserResponse, UserUpdate
-from app.schemas.session import SessionResponse
+from app.schemas.session import SessionResponse, SessionListResponse
 from app.core.security import (
     get_password_hash,
     verify_password,

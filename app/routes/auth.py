@@ -8,7 +8,7 @@ from app.models.user import User
 from app.models.session import UserSession
 from app.schemas.auth import UserRegister
 from app.schemas.user import UserResponse, UserUpdate
-from app.schemas.session import SessionResponse, SessionListResponse
+from app.schemas.session import SessionResponse
 from app.core.security import (
     get_password_hash,
     verify_password,
@@ -108,19 +108,17 @@ async def login(
         "session_token": session_token,
     }
 
-
 @router.get("/sessions", response_model=list[SessionResponse], status_code=status.HTTP_200_OK)
 async def get_sessions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    sessions = (
+    return (
         db.query(UserSession)
         .filter(UserSession.user_id == current_user.id)
         .order_by(UserSession.created_at.desc())
         .all()
     )
-    return {"data": sessions}
 
 
 @router.delete("/sessions/{session_id}", status_code=status.HTTP_200_OK)

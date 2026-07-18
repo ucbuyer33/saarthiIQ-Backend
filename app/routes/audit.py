@@ -6,11 +6,11 @@ from app.database import get_db
 from app.models.audit import Audit
 from app.models.user import User
 from app.core.dependencies import get_current_user
-from app.schemas.audit import AuditResponse
+from app.schemas.audit import AuditListResponse
 
 router = APIRouter(prefix="/audit", tags=["Audit Logs"])
 
-@router.get("/", response_model=dict, status_code=status.HTTP_200_OK)
+@router.get("/", response_model=AuditListResponse, status_code=status.HTTP_200_OK)
 async def get_audit_logs(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),

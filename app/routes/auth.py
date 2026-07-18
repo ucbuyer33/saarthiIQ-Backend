@@ -1,3 +1,4 @@
+# saarthiIQ-Backend\app\routes\auth.py
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
@@ -108,17 +109,18 @@ async def login(
         "session_token": session_token,
     }
 
-@router.get("/sessions", response_model=list[SessionResponse], status_code=status.HTTP_200_OK)
+@router.get("/sessions", response_model=SessionListResponse, status_code=status.HTTP_200_OK)
 async def get_sessions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return (
+    sessions = (
         db.query(UserSession)
         .filter(UserSession.user_id == current_user.id)
         .order_by(UserSession.created_at.desc())
         .all()
     )
+    return {"data": sessions}
 
 
 @router.delete("/sessions/{session_id}", status_code=status.HTTP_200_OK)

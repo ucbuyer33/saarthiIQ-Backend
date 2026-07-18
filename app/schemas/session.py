@@ -1,3 +1,4 @@
+# saarthiIQ-Backend\app\schemas\session.py
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional, List
@@ -11,6 +12,7 @@ class SessionResponse(BaseModel):
     is_current: bool
     created_at: datetime
     last_active: datetime
+    location: Optional[str] = None
 
     class Config:
         from_attributes = True

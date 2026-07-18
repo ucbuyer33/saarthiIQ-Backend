@@ -1,6 +1,8 @@
+# saarthiIQ-Backend\app\models\session.py
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+
 
 from app.database import Base
 
@@ -16,5 +18,5 @@ class UserSession(Base):
     is_current = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     last_active = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-
+    location = Column(String, nullable=True)
     user = relationship("User", back_populates="sessions")

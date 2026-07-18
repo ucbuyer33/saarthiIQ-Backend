@@ -1,6 +1,7 @@
 # saarthiIQ-Backend\app\core\security.py
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union, Any
+import uuid  # 👈 Added for session token generation
 from jose import jwt
 from passlib.context import CryptContext
 from app.config import settings
@@ -52,3 +53,7 @@ def create_access_token(subject: Union[str, Any], role: str = "user", expires_de
     
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
+def create_session_token() -> str:
+    """Generates a secure, unique random string token for sessions."""
+    return str(uuid.uuid4())

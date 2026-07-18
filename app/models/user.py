@@ -39,3 +39,4 @@ class User(Base):
     theme = Column(String, nullable=True)
     notification_settings = Column(String, nullable=True)
     email_preferences = Column(String, nullable=True)
+    sessions = relationship("UserSession", back_populates="user", cascade="all, delete-orphan")

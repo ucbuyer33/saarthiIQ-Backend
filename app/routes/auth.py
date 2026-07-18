@@ -1,23 +1,24 @@
-# saarthiIQ-Backend\app\routes\auth.py
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
-from app.services.audit_service import log_action
 import logging
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.auth import UserRegister, UserLogin
+from app.models.session import UserSession
+from app.schemas.auth import UserRegister
 from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.session import SessionResponse
 from app.core.security import (
     get_password_hash,
     verify_password,
     create_access_token,
+    create_session_token,
 )
 from app.core.dependencies import get_current_user
+from app.services.audit_service import log_action
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
@@ -40,6 +41,8 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
     )
 
     db.add(new_user)
+    db.flush()
+
     log_action(db, "REGISTER", "auth", user_id=new_user.id, details={"email": new_user.email, "role": new_user.role})
     db.commit()
     db.refresh(new_user)
@@ -54,7 +57,11 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", status_code=status.HTTP_200_OK)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
     db_user = db.query(User).filter(User.email == form_data.username).first()
     invalid_credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -64,20 +71,87 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 
     if not db_user:
         raise invalid_credentials_exception
-
     if not verify_password(form_data.password, db_user.hashed_password):
         raise invalid_credentials_exception
-
-    if hasattr(db_user, 'is_active') and not db_user.is_active:
+    if hasattr(db_user, "is_active") and not db_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your account has been deactivated. Contact admin."
+            detail="Your account has been deactivated. Contact admin.",
         )
 
     token = create_access_token(subject=db_user.email, role=db_user.role)
-    log_action(db, "LOGIN", "auth", user_id=db_user.id, details={"email": db_user.email})
+    session_token = create_session_token()
+
+    device_name = "Desktop Browser"
+    ua = request.headers.get("user-agent", "")
+    if ua:
+        low = ua.lower()
+        if any(x in low for x in ["iphone", "android", "mobile", "ipad"]):
+            device_name = "Mobile Device"
+
+    session = UserSession(
+        user_id=db_user.id,
+        session_token=session_token,
+        device_name=device_name,
+        ip_address=request.client.host if request.client else None,
+        user_agent=ua,
+        is_current=True,
+    )
+    db.add(session)
+
+    log_action(db, "LOGIN", "auth", user_id=db_user.id, details={"email": db_user.email, "device": device_name})
     db.commit()
-    return {"access_token": token, "token_type": "bearer"}
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "session_token": session_token,
+    }
+
+
+@router.get("/sessions", response_model=dict, status_code=status.HTTP_200_OK)
+async def get_sessions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    sessions = (
+        db.query(UserSession)
+        .filter(UserSession.user_id == current_user.id)
+        .order_by(UserSession.created_at.desc())
+        .all()
+    )
+    return {"data": sessions}
+
+
+@router.delete("/sessions/{session_id}", status_code=status.HTTP_200_OK)
+async def revoke_session(
+    session_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    session = db.query(UserSession).filter(
+        UserSession.id == session_id,
+        UserSession.user_id == current_user.id,
+    ).first()
+
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    db.delete(session)
+    log_action(db, "REVOKE_SESSION", "auth", user_id=current_user.id, details={"session_id": session_id})
+    db.commit()
+    return {"status": "success", "message": "Session revoked"}
+
+
+@router.post("/logout-everywhere", status_code=status.HTTP_200_OK)
+async def logout_everywhere(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    db.query(UserSession).filter(UserSession.user_id == current_user.id).delete()
+    log_action(db, "LOGOUT_EVERYWHERE", "auth", user_id=current_user.id)
+    db.commit()
+    return {"status": "success", "message": "Logged out everywhere"}
 
 
 @router.post("/change-password", status_code=status.HTTP_200_OK)
@@ -99,16 +173,11 @@ async def change_password(
     return {"status": "success", "message": "Password updated"}
 
 
-@router.post("/logout-everywhere", status_code=status.HTTP_200_OK)
-async def logout_everywhere(current_user: User = Depends(get_current_user)):
-    log_action(db, "LOGOUT_EVERYWHERE", "auth", user_id=current_user.id)
-    return {"status": "success", "message": "Logged out everywhere"}
-
-
 @router.delete("/me", status_code=status.HTTP_200_OK)
 async def delete_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    user_id = current_user.id
     db.delete(current_user)
-    log_action(db, "DELETE", "auth", user_id=current_user.id)
+    log_action(db, "DELETE", "auth", user_id=user_id)
     db.commit()
     return {"status": "success", "message": "Account deleted"}
 
@@ -131,6 +200,7 @@ async def update_me(payload: UserUpdate, db: Session = Depends(get_db), current_
         setattr(current_user, field, value)
 
     db.add(current_user)
+    log_action(db, "UPDATE", "profile", user_id=current_user.id, details={"fields": list(data.keys())})
     db.commit()
     db.refresh(current_user)
     return current_user

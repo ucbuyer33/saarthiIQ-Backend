@@ -49,7 +49,6 @@ async def create_candidate(
     )
 
     db.add(new_candidate)
-    db.commit()
     log_action(db, "CREATE", "candidate", user_id=current_user.id, details={"candidate_id": new_candidate.id, "email": new_candidate.email})
     db.commit()
     db.refresh(new_candidate)

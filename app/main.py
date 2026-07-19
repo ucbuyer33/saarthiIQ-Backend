@@ -40,9 +40,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Initializing system configurations database engine...")
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database structural framework synchronized successfully.")
+    logger.info("Application startup complete.")
     yield
     logger.info("Shutting down application server sockets pools...")
 

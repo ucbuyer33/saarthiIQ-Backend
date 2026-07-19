@@ -1,5 +1,6 @@
 # saarthiIQ-Backend\alembic\env.py
 from logging.config import fileConfig
+import os
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
@@ -12,17 +13,14 @@ import app.models.task
 import app.models.note
 import app.models.resume
 import app.models.audit
-from app.database import Base 
+from app.database import Base
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-    
+
+config.set_main_option("sqlalchemy.url", os.environ["DATABASE_URL"])
 target_metadata = Base.metadata
 
 # add your model's MetaData object here

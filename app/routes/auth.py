@@ -89,19 +89,21 @@ async def login(
         low = ua.lower()
         if any(x in low for x in ["iphone", "android", "mobile", "ipad"]):
             device_name = "Mobile Device"
-
-    session = UserSession(
-        user_id=db_user.id,
-        session_token=session_token,
-        device_name=device_name,
-        ip_address=request.client.host if request.client else None,
-        user_agent=ua,
-        is_current=True,
-    )
-    db.add(session)
-
-    log_action(db, "LOGIN", "auth", user_id=db_user.id, details={"email": db_user.email, "device": device_name})
-    db.commit()
+    try:
+        session = UserSession(
+            user_id=db_user.id,
+            session_token=session_token,
+            device_name=device_name,
+            ip_address=request.client.host if request.client else None,
+            user_agent=ua,
+            is_current=True,
+        )
+        db.add(session)
+        log_action(db, "LOGIN", "auth", user_id=db_user.id, details={"email": db_user.email, "device": device_name})
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
     return {
         "access_token": token,

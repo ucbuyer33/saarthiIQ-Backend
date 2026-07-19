@@ -1,4 +1,3 @@
-# saarthiIQ-Backend\app\routes\auth.py
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
@@ -18,6 +17,7 @@ from app.core.security import (
 )
 from app.core.dependencies import get_current_user
 from app.services.audit_service import log_action
+from app.utils.id_gen import generate_user_id          # ← NEW
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -27,7 +27,10 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 async def register(user: UserRegister, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
 
     allowed_public_roles = {"user", "recruiter"}
     requested_role = user.role or "user"
@@ -42,18 +45,27 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
     )
 
     db.add(new_user)
-    db.flush()
+    db.flush()   # ← assigns new_user.id (PK) without committing
 
-    log_action(db, "REGISTER", "auth", user_id=new_user.id, details={"email": new_user.email, "role": new_user.role})
+    # ── Generate role-prefixed Feistel ID now that we have the PK ────────────
+    new_user.user_id = generate_user_id(new_user.id, requested_role)
+    # ─────────────────────────────────────────────────────────────────────────
+
+    log_action(
+        db, "REGISTER", "auth",
+        user_id=new_user.id,
+        details={"email": new_user.email, "role": new_user.role, "user_id": new_user.user_id},
+    )
     db.commit()
     db.refresh(new_user)
 
     return {
-        "status": "success",
+        "status":  "success",
         "message": "User Registered Successfully",
-        "user_id": new_user.id,
-        "email": new_user.email,
-        "role": new_user.role,
+        "user_id": new_user.user_id,   # ← now returns "CD001423" style
+        "db_id":   new_user.id,
+        "email":   new_user.email,
+        "role":    new_user.role,
     }
 
 
@@ -80,7 +92,7 @@ async def login(
             detail="Your account has been deactivated. Contact admin.",
         )
 
-    token = create_access_token(subject=db_user.email, role=db_user.role)
+    token         = create_access_token(subject=db_user.email, role=db_user.role)
     session_token = create_session_token()
 
     device_name = "Desktop Browser"
@@ -106,10 +118,11 @@ async def login(
         raise
 
     return {
-        "access_token": token,
-        "token_type": "bearer",
+        "access_token":  token,
+        "token_type":    "bearer",
         "session_token": session_token,
     }
+
 
 @router.get("/sessions", response_model=SessionListResponse, status_code=status.HTTP_200_OK)
 async def get_sessions(
@@ -163,11 +176,17 @@ async def change_password(
     current_user: User = Depends(get_current_user),
 ):
     current_password = payload.get("current_password", "")
-    new_password = payload.get("new_password", "")
+    new_password     = payload.get("new_password", "")
     if not current_password or not new_password:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password and new password are required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password and new password are required",
+        )
     if not verify_password(current_password, current_user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect",
+        )
     current_user.hashed_password = get_password_hash(new_password)
     db.add(current_user)
     log_action(db, "PASSWORD_CHANGE", "auth", user_id=current_user.id)
@@ -176,7 +195,10 @@ async def change_password(
 
 
 @router.delete("/me", status_code=status.HTTP_200_OK)
-async def delete_me(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def delete_me(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     user_id = current_user.id
     db.delete(current_user)
     log_action(db, "DELETE", "auth", user_id=user_id)
@@ -190,13 +212,23 @@ async def me(current_user: User = Depends(get_current_user)):
 
 
 @router.patch("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)
-async def update_me(payload: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def update_me(
+    payload: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     data = payload.dict(exclude_unset=True)
 
     if "email" in data:
-        existing = db.query(User).filter(User.email == data["email"], User.id != current_user.id).first()
+        existing = db.query(User).filter(
+            User.email == data["email"],
+            User.id != current_user.id,
+        ).first()
         if existing:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already in use.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already in use.",
+            )
 
     for field, value in data.items():
         setattr(current_user, field, value)

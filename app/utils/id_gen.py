@@ -19,12 +19,12 @@ Why Feistel?
 
 import hashlib
 from app.lib.constants import ROLE_PREFIX          # noqa: F401  (re-exported for callers)
+import uuid
 
 # ── Role → 2-char prefix map ────────────────────────────────────────────────
 ROLE_PREFIX: dict[str, str] = {
     "user":        "CD",   # Candidate / Recruitee
     "recruiter":   "RC",
-    "interviewer": "IV",
     "admin":       "AD",
 }
 

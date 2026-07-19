@@ -1,3 +1,4 @@
+# saarthiIQ-Backend\app\schemas\user.py
 from datetime import datetime
 from typing import Optional
 
@@ -29,6 +30,7 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    user_id: Optional[str] = None
     role: str
     is_active: bool
     created_at: datetime

@@ -68,6 +68,7 @@ async def get_all_users(
     return [
         {
             "id": u.id,
+            "user_id": u.user_id,
             "full_name": u.full_name,
             "email": u.email,
             "role": u.role,

@@ -20,6 +20,15 @@ def upgrade() -> None:
         'users',
         sa.Column('user_id', sa.String(length=8), nullable=True),
     )
+    op.execute("""
+        UPDATE users
+        SET user_id = CASE
+            WHEN role = 'recruiter'   THEN 'RC' || LPAD(CAST((MOD(CAST(id AS NUMERIC) * 6364136223846793005 + 1442695040888963407, 1000000)) AS TEXT), 6, '0')
+            WHEN role = 'interviewer' THEN 'IV' || LPAD(CAST((MOD(CAST(id AS NUMERIC) * 6364136223846793005 + 1442695040888963407, 1000000)) AS TEXT), 6, '0')
+            ELSE                           'US' || LPAD(CAST((MOD(CAST(id AS NUMERIC) * 6364136223846793005 + 1442695040888963407, 1000000)) AS TEXT), 6, '0')
+        END
+        WHERE user_id IS NULL;
+    """)
     # Unique index — enforced by DB, not just SQLAlchemy
     op.create_index(
         op.f('ix_users_user_id'),

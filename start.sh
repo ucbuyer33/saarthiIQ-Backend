@@ -1,6 +1,5 @@
-# saarthiIQ-Backend\start.sh
 #!/bin/bash
 set -e
 
-alembic upgrade head
-uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+python -m alembic upgrade head
+python -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT"

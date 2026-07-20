@@ -10,6 +10,7 @@ python-multipart>=0.0.9      # Crucial for dynamic file uploads streams processi
 # ==========================================
 sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.0
+alembic>=1.13.0
 
 # ==========================================
 # 🛡️ Data Validation & Settings Engine

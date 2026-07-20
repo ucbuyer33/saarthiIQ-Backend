@@ -1,3 +1,4 @@
+# saarthiIQ-Backend\app\utils\id_gen.py
 """
 app/utils/id_gen.py
 ───────────────────
@@ -18,8 +19,7 @@ Why Feistel?
 """
 
 import hashlib
-from app.lib.constants import ROLE_PREFIX          # noqa: F401  (re-exported for callers)
-import uuid
+
 
 # ── Role → 2-char prefix map ────────────────────────────────────────────────
 ROLE_PREFIX: dict[str, str] = {
@@ -27,6 +27,7 @@ ROLE_PREFIX: dict[str, str] = {
     "recruiter":   "RC",
     "admin":       "AD",
 }
+
 
 # ── Internal constants ────────────────────────────────────────────────────────
 _HALF_BITS  = 10          # 10-bit halves  →  range 0-1023
@@ -63,15 +64,15 @@ def generate_user_id(db_id: int, role: str) -> str:
 
     Args:
         db_id : integer primary key assigned by Postgres / SQLite
-        role  : one of "user", "recruiter", "interviewer", "admin"
+        role  : one of "user", "recruiter", "admin"
 
     Returns:
         8-character string, e.g. "CD001423" or "RC889234"
     """
-    prefix   = ROLE_PREFIX.get(role, "US")          # fallback prefix
-    role_key = sum(ord(c) for c in prefix)           # cheap role → int
+    prefix   = ROLE_PREFIX.get(role, "CD")   # default to CD if unknown
+    role_key = sum(ord(c) for c in prefix)   # cheap role → int
 
-    feistel_out = _feistel(db_id, role_key)          # 0 – 1 048 575
-    suffix      = feistel_out % 1_000_000            # clamp to 6 digits
+    feistel_out = _feistel(db_id, role_key)  # 0 – 1 048 575
+    suffix      = feistel_out % 1_000_000    # clamp to 6 digits
 
     return f"{prefix}{suffix:06d}"

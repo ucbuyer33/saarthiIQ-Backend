@@ -18,7 +18,8 @@ from app.core.security import (
 )
 from app.core.dependencies import get_current_user
 from app.services.audit_service import log_action
-from app.utils.id_gen import generate_user_id          # ← NEW
+from app.services.email_service import send_welcome_email   # ← Welcome email
+from app.utils.id_gen import generate_user_id               # ← Feistel ID
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -59,6 +60,18 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
     )
     db.commit()
     db.refresh(new_user)
+
+    # ── Send welcome email (non-blocking — failure won't break registration) ──
+    try:
+        await send_welcome_email(
+            to_email=new_user.email,
+            full_name=new_user.full_name,
+            user_id=new_user.user_id,
+            role=new_user.role,
+        )
+    except Exception as e:
+        logger.warning(f"Welcome email failed for {new_user.email}: {e}")
+    # ─────────────────────────────────────────────────────────────────────────
 
     return {
         "status":  "success",

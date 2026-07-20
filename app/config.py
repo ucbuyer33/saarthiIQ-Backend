@@ -19,13 +19,9 @@ class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: str
 
-    # 1. Computed Property Builder: Dynamically generates the SQLAlchemy execution string
     @computed_field
     @property
     def DATABASE_URL(self) -> str:
-        """
-        Synthesizes the global asynchronous/synchronous DB connectivity URL framework.
-        """
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
     # ==========================================
@@ -41,25 +37,22 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str
 
     # ==========================================
-    # 📧 Enterprise SMTP Communications
+    # 📧 Brevo SMTP Communications
     # ==========================================
-    MAIL_USERNAME: str
-    MAIL_PASSWORD: str
-    MAIL_FROM: str
+    MAIL_USERNAME: str          # Your Brevo account email
+    MAIL_PASSWORD: str          # Brevo SMTP key (not your login password)
+    MAIL_FROM: str              # Sender address (your Brevo account email)
     MAIL_PORT: int = Field(587)
-    MAIL_SERVER: str
+    MAIL_SERVER: str = Field("smtp-relay.brevo.com")
     MAIL_FROM_NAME: str = Field("Recruitment Operations Team")
-    RESEND_API_KEY: str
 
     # ==========================================
     # ⚙️ Environments Validation Setup
     # ==========================================
     model_config = SettingsConfigDict(
-        # Allows loading configuration file safely from application workspace roots
         env_file=os.path.join(os.getcwd(), ".env") if os.path.exists(".env") else ".env",
         env_file_encoding="utf-8",
         extra="ignore"
     )
 
-# Singleton global orchestration variable instantiation
 settings = Settings()

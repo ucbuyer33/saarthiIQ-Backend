@@ -3,7 +3,7 @@
 # ==========================================
 fastapi>=0.110.0
 uvicorn[standard]>=0.28.0
-python-multipart>=0.0.9      # Crucial for dynamic file uploads streams processing
+python-multipart>=0.0.9
 
 # ==========================================
 # 🗄️ Database ORM & Drivers
@@ -17,25 +17,24 @@ alembic>=1.13.0
 # ==========================================
 pydantic>=2.6.0
 pydantic-settings>=2.2.0
-email-validator>=2.1.0        # Required internally by Pydantic EmailStr configurations
+email-validator>=2.1.0
 
 # ==========================================
-# 🔒 Authentication & Cryptography 
+# 🔒 Authentication & Cryptography
 # ==========================================
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
-bcrypt==4.0.1                 # Explicit pinning locked to guarantee passlib system runtime safety
+bcrypt==4.0.1
 
 # ==========================================
-# 🧠 AI & Global Communication Engines
+# 🧠 AI & Communication
 # ==========================================
-google-genai>=1.0.0           # Modern Google SDK framework layer for Gemini integrations
-resend>=2.0.0                 # HTTP-based transactional email API — bypasses cloud SMTP port blocks
+google-genai>=1.0.0
+aiosmtplib>=3.0.0        # kept for compatibility
 
 # ==========================================
-# ⚙️ Environments Validation Configuration
+# ⚙️ Environment & File Utilities
 # ==========================================
 python-dotenv>=1.0.0
-
-aiofiles>=23.0.0              # Async local file structure storage streams handle karne ke liye
+aiofiles>=23.0.0
 pymupdf>=1.24.0

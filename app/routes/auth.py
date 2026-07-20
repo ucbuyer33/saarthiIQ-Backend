@@ -25,25 +25,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-# ── Background task wrapper (sync-safe for FastAPI BackgroundTasks) ──────────
-def _dispatch_welcome_email(to_email: str, full_name: str, user_id: str, role: str):
-    """
-    Thin sync wrapper that creates a new event loop to run the async email coroutine.
-    FastAPI BackgroundTasks runs in a thread pool, so we need asyncio.run() here.
-    """
-    import asyncio
-    try:
-        asyncio.run(send_welcome_email(
-            to_email=to_email,
-            full_name=full_name,
-            user_id=user_id,
-            role=role,
-        ))
-    except Exception as e:
-        logger.warning(f"Welcome email background dispatch failed for {to_email}: {e}")
-# ─────────────────────────────────────────────────────────────────────────────
-
-
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(
     user: UserRegister,
@@ -86,7 +67,7 @@ async def register(
 
     # ── Fire welcome email in background — API responds instantly ────────────
     background_tasks.add_task(
-        _dispatch_welcome_email,
+        send_welcome_email,
         to_email=new_user.email,
         full_name=new_user.full_name,
         user_id=new_user.user_id,
@@ -97,7 +78,7 @@ async def register(
     return {
         "status":  "success",
         "message": "User Registered Successfully",
-        "user_id": new_user.user_id,   # ← now returns "CD001423" style
+        "user_id": new_user.user_id,
         "db_id":   new_user.id,
         "email":   new_user.email,
         "role":    new_user.role,

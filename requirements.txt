@@ -30,7 +30,7 @@ bcrypt==4.0.1                 # Explicit pinning locked to guarantee passlib sys
 # 🧠 AI & Global Communication Engines
 # ==========================================
 google-genai>=1.0.0           # Modern Google SDK framework layer for Gemini integrations
-aiosmtplib>=3.0.0             # Non-blocking async SMTP layer for email campaigns infrastructure
+resend>=2.0.0                 # HTTP-based transactional email API — bypasses cloud SMTP port blocks
 
 # ==========================================
 # ⚙️ Environments Validation Configuration

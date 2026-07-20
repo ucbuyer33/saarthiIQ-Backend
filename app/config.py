@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     MAIL_PORT: int = Field(587)
     MAIL_SERVER: str
     MAIL_FROM_NAME: str = Field("Recruitment Operations Team")
+    RESEND_API_KEY: str
 
     # ==========================================
     # ⚙️ Environments Validation Setup

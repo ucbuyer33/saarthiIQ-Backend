@@ -15,9 +15,8 @@ down_revision = "b85766486fe0"
 
 
 def upgrade():
-    # op.add_column("user_sessions", sa.Column("location", sa.String(), nullable=True))
-    pass  # Uncomment the above line to add the column when ready
+    pass
 
 
 def downgrade():
-    op.drop_column("user_sessions", "location")
+    pass

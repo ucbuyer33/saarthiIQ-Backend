@@ -41,13 +41,11 @@ def send_email(to_email: str, subject: str, body: str, is_html: bool = False) ->
 # ==========================================
 # 🎉 Welcome Email — Sent on Registration
 # ==========================================
-def send_welcome_email(to_email: str, full_name: str, user_id: str, role: str) -> bool:
+def send_welcome_email(to_email: str, full_name: str, user_id: str) -> bool:
     """
-    Sends a branded HTML welcome email after successful user registration.
+    Sends a branded HTML welcome email after successful recruiter registration.
     Non-fatal — failure is logged as warning only.
     """
-    role_color = "#6366f1" if role == "user" else "#0ea5e9"
-    role_badge = "Recruitee" if role == "user" else "Recruiter"
     subject = f"Welcome to SaarthiIQ, {full_name.split()[0]}! 🎉"
 
     body = f"""
@@ -81,13 +79,9 @@ def send_welcome_email(to_email: str, full_name: str, user_id: str, role: str) -
                       <span style="color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;">Email</span><br/>
                       <span style="color:#1e293b;font-size:15px;">{to_email}</span>
                     </td></tr>
-                    <tr><td style="padding:8px 0;border-bottom:1px solid #e2e8f0;">
+                    <tr><td style="padding:8px 0;">
                       <span style="color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;">User ID</span><br/>
                       <span style="color:#4f46e5;font-size:15px;font-weight:700;font-family:monospace;">{user_id}</span>
-                    </td></tr>
-                    <tr><td style="padding:8px 0;">
-                      <span style="color:#94a3b8;font-size:12px;font-weight:600;text-transform:uppercase;">Account Type</span><br/>
-                      <span style="display:inline-block;margin-top:4px;background:{role_color};color:white;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;">{role_badge}</span>
                     </td></tr>
                   </table>
                 </td></tr>
@@ -95,8 +89,8 @@ def send_welcome_email(to_email: str, full_name: str, user_id: str, role: str) -
 
               <p style="font-size:14px;color:#475569;margin:0 0 12px;font-weight:600;">What you can do now:</p>
               <table width="100%" style="margin-bottom:32px;">
-                <tr><td style="padding:5px 0;"><span style="color:#4f46e5;margin-right:8px;">✦</span><span style="color:#475569;font-size:14px;">{'Browse job matches and upload your resume' if role == 'user' else 'Post campaigns and manage candidates'}</span></td></tr>
-                <tr><td style="padding:5px 0;"><span style="color:#4f46e5;margin-right:8px;">✦</span><span style="color:#475569;font-size:14px;">{'Get AI-powered skill gap analysis' if role == 'user' else 'Schedule interviews and track progress'}</span></td></tr>
+                <tr><td style="padding:5px 0;"><span style="color:#4f46e5;margin-right:8px;">✦</span><span style="color:#475569;font-size:14px;">Post campaigns and manage candidates</span></td></tr>
+                <tr><td style="padding:5px 0;"><span style="color:#4f46e5;margin-right:8px;">✦</span><span style="color:#475569;font-size:14px;">Schedule interviews and track progress</span></td></tr>
                 <tr><td style="padding:5px 0;"><span style="color:#4f46e5;margin-right:8px;">✦</span><span style="color:#475569;font-size:14px;">View your personalised dashboard</span></td></tr>
               </table>
 

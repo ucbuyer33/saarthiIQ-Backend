@@ -1,5 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
-python -m alembic upgrade heads
-python -m uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
+uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-10000}

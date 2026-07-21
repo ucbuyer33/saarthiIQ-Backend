@@ -18,10 +18,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
-    op.add_column('candidates', sa.Column('is_deleted', sa.Boolean(), nullable=False, server_default=sa.false()))
-    op.add_column('candidates', sa.Column('deleted_at', sa.DateTime(), nullable=True))
-
+    pass
 
 def downgrade() -> None:
-    op.drop_column('candidates', 'deleted_at')
-    op.drop_column('candidates', 'is_deleted')
+    pass

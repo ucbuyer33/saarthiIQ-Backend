@@ -1,4 +1,3 @@
-# saarthiIQ-Backend\app\routes\users.py
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.orm import Session
 from app.services.audit_service import log_action
@@ -51,28 +50,3 @@ async def update_current_logged_in_user(
     )
 
     return current_user
-
-
-@router.get("", status_code=status.HTTP_200_OK)
-async def get_all_users(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admin can access all users."
-        )
-
-    users = db.query(User).order_by(User.id.desc()).all()
-    return [
-        {
-            "id": u.id,
-            "user_id": u.user_id,
-            "full_name": u.full_name,
-            "email": u.email,
-            "role": u.role,
-            "created_at": u.created_at,
-        }
-        for u in users
-    ]

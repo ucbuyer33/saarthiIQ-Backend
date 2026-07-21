@@ -1,4 +1,3 @@
-# saarthiIQ-Backend\app\routes\auth.py
 from fastapi import APIRouter, Depends, HTTPException, status, Request, BackgroundTasks
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
@@ -38,42 +37,36 @@ async def register(
             detail="Email already registered",
         )
 
-    allowed_public_roles = {"user", "recruiter"}
-    requested_role = user.role or "user"
-    if requested_role not in allowed_public_roles:
-        requested_role = "user"
-
+    # Single-role (recruiter) app — every new account is a recruiter.
     new_user = User(
         full_name=user.full_name,
         email=user.email,
         hashed_password=get_password_hash(user.password),
-        role=requested_role,
     )
 
     db.add(new_user)
     db.flush()   # ← assigns new_user.id (PK) without committing
 
-    # ── Generate role-prefixed Feistel ID now that we have the PK ────────────
-    new_user.user_id = generate_user_id(new_user.id, requested_role)
-    # ─────────────────────────────────────────────────────────────────────────
+    # ── Generate Feistel ID now that we have the PK ─────────────────────
+    new_user.user_id = generate_user_id(new_user.id)
+    # ──────────────────────────────────────────────────────────────
 
     log_action(
         db, "REGISTER", "auth",
         user_id=new_user.id,
-        details={"email": new_user.email, "role": new_user.role, "user_id": new_user.user_id},
+        details={"email": new_user.email, "user_id": new_user.user_id},
     )
     db.commit()
     db.refresh(new_user)
 
-    # ── Fire welcome email in background — API responds instantly ────────────
+    # ── Fire welcome email in background — API responds instantly ──────────
     background_tasks.add_task(
         send_welcome_email,
         to_email=new_user.email,
         full_name=new_user.full_name,
         user_id=new_user.user_id,
-        role=new_user.role,
     )
-    # ─────────────────────────────────────────────────────────────────────────
+    # ───────────────────────────────────────────────────────────
 
     return {
         "status":  "success",
@@ -81,7 +74,6 @@ async def register(
         "user_id": new_user.user_id,
         "db_id":   new_user.id,
         "email":   new_user.email,
-        "role":    new_user.role,
     }
 
 
@@ -105,10 +97,10 @@ async def login(
     if hasattr(db_user, "is_active") and not db_user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Your account has been deactivated. Contact admin.",
+            detail="Your account has been deactivated. Contact support.",
         )
 
-    token         = create_access_token(subject=db_user.email, role=db_user.role)
+    token         = create_access_token(subject=db_user.email)
     session_token = create_session_token()
 
     device_name = "Desktop Browser"

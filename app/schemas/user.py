@@ -24,14 +24,12 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=64)
-    role: Optional[str] = Field("user")
     is_active: Optional[bool] = Field(True)
 
 
 class UserResponse(UserBase):
     id: int
     user_id: Optional[str] = None
-    role: str
     is_active: bool
     created_at: datetime
 
@@ -52,9 +50,6 @@ class UserResponse(UserBase):
     active_candidates: Optional[int] = None
     resumes_processed: Optional[int] = None
     campaigns_owned: Optional[int] = None
-    permission_scope: Optional[str] = None
-    admin_privileges: Optional[str] = None
-    users_managed: Optional[int] = None
 
     class Config:
         from_attributes = True

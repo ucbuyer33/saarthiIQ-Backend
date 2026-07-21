@@ -1,4 +1,3 @@
-# saarthiIQ-Backend\app\core\security.py
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Union, Any
 import uuid  # 👈 Added for session token generation
@@ -33,24 +32,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         logger.error(f"Password encryption mismatch verification failure: {str(e)}")
         return False
 
-def create_access_token(subject: Union[str, Any], role: str = "user", expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(subject: Union[str, Any], expires_delta: Optional[timedelta] = None) -> str:
     """
     Generates a secure, time-bounded JWT access token.
-    Properly encodes subject and dynamic authorization roles mapping fields.
+    Single-role (recruiter) app — no role claim needed.
     """
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
-    # Payload claims structure containing scope definitions array
+
     to_encode = {
         "sub": str(subject),
-        "role": str(role),  # Injected seamlessly to match RoleChecker loops in dependencies.py
         "exp": expire,
-        "iss": "SaarthiIQ-Core-Engine"  # Issuing authority tracker tag
+        "iss": "SaarthiIQ-Core-Engine"
     }
-    
+
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
